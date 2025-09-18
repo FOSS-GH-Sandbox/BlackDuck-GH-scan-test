@@ -3,58 +3,34 @@ on:
   push:
     branches:
       - main
+      - master
+      - develop
+      - stage
+      - release
   pull_request:
     branches:
       - main
+      - master
+      - develop
+      - stage
+      - release
   workflow_dispatch: {}
-  
-permissions:
-  contents: write
-
 jobs:
   blackducksca:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout main branch
+      - name: Checkout Source
         uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Check home dir
-        run: |
-          echo $HOME
-          echo ~
-      - name: Install detect in this dir
-        run: |
-          wget -O ~/.bridge/blackduck/detect-10.7.0.jar "https://artifactory.intra.infineon.com/artifactory/gen-repo-blackduck-com/bds-integrations-release/com/blackduck/integration/detect/10.7.0/detect-10.7.0.jar"
-          wget -O ~/bridge-cli/bridge-cli-bundle-linux64.zip "https://artifactory.intra.infineon.com/artifactory/gen-repo-blackduck-com/bds-integrations-release/com/blackduck/integration/bridge/binaries/bridge-cli-bundle/latest/bridge-cli-bundle-linux64.zip"
-      - name: Unzip cli bundle
-        run: unzip -o ~/bridge-cli/bridge-cli-bundle-linux64.zip -d /srv/cirunner/bridge-cli
-
-
-      - name: Print these dirs
-        run: |
-          cd ~/bridge-cli/ 
-          ls
-          cd ~/.bridge/blackduck/
-          ls
       - name: Black Duck Security Scan
         id: black-duck-security-scan
         uses: blackduck-inc/black-duck-security-scan@v2
-                
         with:
           blackducksca_url: ${{ vars.BLACKDUCKSCA_URL }}
-          blackducksca_token: ${{ secrets.BLACKDUCKSCA_TOKEN }}                
-          network_airgap: true
-          bridgecli_install_directory: /srv/cirunner/bridge-cli/bridge-cli-bundle-linux64/
-          detect_install_directory: /srv/cirunner/.bridge/blackduck/
-          
+          blackducksca_token: ${{ secrets.BLACKDUCKSCA_TOKEN }}
           blackducksca_waitForScan: true
           mark_build_status: failure
-          include_diagnostics: false          
+          include_diagnostics: false
           blackducksca_prComment_enabled: false
           blackducksca_fixpr_enabled: false
           blackducksca_reports_sarif_create: false
           blackducksca_upload_sarif_report: false
-
-      - name: Remove all dependencies after scan
-        run: rm -rf /srv/cirunner/bridge-cli/* /srv/cirunner/.bridge/blackduck/*
